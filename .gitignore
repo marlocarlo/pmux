@@ -1,0 +1,15 @@
+# Build artifacts
+target/
+
+# Backup and temp files
+*.rs.bk
+*.swp
+*.tmp
+~*
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Trae workspace
+.trae/
