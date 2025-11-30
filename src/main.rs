@@ -5,7 +5,6 @@ use std::time::{Duration, Instant};
 use std::net::TcpListener;
 use std::io::Read as _;
 use std::io::BufRead as _;
-use std::io::Write;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use portable_pty::{CommandBuilder, MasterPty, PtySize, PtySystemSelection};
@@ -105,7 +104,7 @@ fn main() -> io::Result<()> {
         match args[1].as_str() {
             "ls" | "list-sessions" => {
                 let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-                let dir = format!("{}\\.rmux", home);
+                let dir = format!("{}\\.pmux", home);
                 if let Ok(entries) = std::fs::read_dir(&dir) {
                     for e in entries.flatten() {
                         if let Some(name) = e.file_name().to_str() {
@@ -139,14 +138,14 @@ fn main() -> io::Result<()> {
                     .or_else(resolve_default_session_name)
                     .or_else(resolve_last_session_name)
                     .unwrap_or_else(|| "default".to_string());
-                env::set_var("RMUX_SESSION_NAME", name);
-                env::set_var("RMUX_REMOTE_ATTACH", "1");
+                env::set_var("PMUX_SESSION_NAME", name);
+                env::set_var("PMUX_REMOTE_ATTACH", "1");
             }
             "server" | "new-session" => {
                 let name = args.iter().position(|a| a == "-s").and_then(|i| args.get(i+1)).map(|s| s.clone()).unwrap_or_else(|| "default".to_string());
                 let detached = args.iter().any(|a| a == "-d");
                 if detached {
-                    let exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("rmux"));
+                    let exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("pmux"));
                     let mut cmd = std::process::Command::new(exe);
                     cmd.arg("server").arg("-s").arg(&name);
                     let _child = cmd.spawn().map_err(|e| io::Error::new(io::ErrorKind::Other, format!("failed to spawn server: {e}")))?;
@@ -167,18 +166,18 @@ fn main() -> io::Result<()> {
             _ => {}
         }
     }
-    if env::var("RMUX_ACTIVE").ok().as_deref() == Some("1") {
-        eprintln!("rmux: nested sessions are not allowed");
+    if env::var("PMUX_ACTIVE").ok().as_deref() == Some("1") {
+        eprintln!("pmux: nested sessions are not allowed");
         return Ok(());
     }
-    env::set_var("RMUX_ACTIVE", "1");
+    env::set_var("PMUX_ACTIVE", "1");
     let mut stdout = io::stdout();
     enable_raw_mode()?;
     execute!(stdout, EnterAlternateScreen, EnableBlinking, EnableMouseCapture)?;
     apply_cursor_style(&mut stdout)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    let result = if env::var("RMUX_REMOTE_ATTACH").ok().as_deref() == Some("1") { run_remote(&mut terminal) } else { run(&mut terminal) };
+    let result = if env::var("PMUX_REMOTE_ATTACH").ok().as_deref() == Some("1") { run_remote(&mut terminal) } else { run(&mut terminal) };
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), DisableBlinking, DisableMouseCapture, LeaveAlternateScreen)?;
     terminal.show_cursor()?;
@@ -186,14 +185,14 @@ fn main() -> io::Result<()> {
 }
 
 fn run_remote(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> {
-    let name = env::var("RMUX_SESSION_NAME").unwrap_or_else(|_| "default".to_string());
+    let name = env::var("PMUX_SESSION_NAME").unwrap_or_else(|_| "default".to_string());
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let path = format!("{}\\.rmux\\{}.port", home, name);
+    let path = format!("{}\\.pmux\\{}.port", home, name);
     let port = std::fs::read_to_string(&path).ok().and_then(|s| s.trim().parse::<u16>().ok()).ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no session"))?;
     let addr = format!("127.0.0.1:{}", port);
     let mut stream = std::net::TcpStream::connect(addr.clone())?;
     let _ = std::io::Write::write_all(&mut stream, b"client-attach\n");
-    let last_path = format!("{}\\.rmux\\last_session", home);
+    let last_path = format!("{}\\.pmux\\last_session", home);
     let _ = std::fs::write(&last_path, &name);
     let mut quit = false;
     let mut prefix_armed = false;
@@ -310,8 +309,8 @@ fn run_remote(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Resu
                     // tmux-like prefix mappings
                     match key.code {
                         KeyCode::Char('c') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"new-window\n"); }
-                        KeyCode::Char('%') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"split-window -v\n"); }
-                        KeyCode::Char('"') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"split-window -h\n"); }
+                        KeyCode::Char('%') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"split-window -h\n"); }
+                        KeyCode::Char('"') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"split-window -v\n"); }
                         KeyCode::Char('x') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"kill-pane\n"); }
                         KeyCode::Char('z') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"zoom-pane\n"); }
                         KeyCode::Char('[') => { let mut s = std::net::TcpStream::connect(addr.clone()).unwrap(); let _ = std::io::Write::write_all(&mut s, b"copy-enter\n"); }
@@ -389,8 +388,8 @@ fn reap_children_placeholder() -> io::Result<bool> { Ok(false) }
 
 fn send_control(line: String) -> io::Result<()> {
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let target = env::var("RMUX_TARGET_SESSION").ok().unwrap_or_else(|| "default".to_string());
-    let path = format!("{}\\.rmux\\{}.port", home, target);
+    let target = env::var("PMUX_TARGET_SESSION").ok().unwrap_or_else(|| "default".to_string());
+    let path = format!("{}\\.pmux\\{}.port", home, target);
     let port = std::fs::read_to_string(&path).ok().and_then(|s| s.trim().parse::<u16>().ok()).ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no session"))?;
     let addr = format!("127.0.0.1:{}", port);
     let mut stream = std::net::TcpStream::connect(addr)?;
@@ -400,8 +399,8 @@ fn send_control(line: String) -> io::Result<()> {
 
 fn send_control_with_response(line: String) -> io::Result<String> {
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let target = env::var("RMUX_TARGET_SESSION").ok().unwrap_or_else(|| "default".to_string());
-    let path = format!("{}\\.rmux\\{}.port", home, target);
+    let target = env::var("PMUX_TARGET_SESSION").ok().unwrap_or_else(|| "default".to_string());
+    let path = format!("{}\\.pmux\\{}.port", home, target);
     let port = std::fs::read_to_string(&path).ok().and_then(|s| s.trim().parse::<u16>().ok()).ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no session"))?;
     let addr = format!("127.0.0.1:{}", port);
     let mut stream = std::net::TcpStream::connect(addr)?;
@@ -426,7 +425,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> 
         last_window_area: Rect { x: 0, y: 0, width: 0, height: 0 },
         mouse_enabled: true,
         paste_buffers: Vec::new(),
-        status_left: "rmux:#I".to_string(),
+        status_left: "pmux:#I".to_string(),
         status_right: "%H:%M".to_string(),
         copy_anchor: None,
         copy_pos: None,
@@ -434,7 +433,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> 
         binds: Vec::new(),
         control_rx: None,
         control_port: None,
-        session_name: env::var("RMUX_SESSION_NAME").unwrap_or_else(|_| "default".to_string()),
+        session_name: env::var("PMUX_SESSION_NAME").unwrap_or_else(|_| "default".to_string()),
         attached_clients: 1,
         created_at: Local::now(),
         next_win_id: 1,
@@ -453,7 +452,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> 
     let port = listener.local_addr()?.port();
     app.control_port = Some(port);
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let dir = format!("{}\\.rmux", home);
+    let dir = format!("{}\\.pmux", home);
     let _ = std::fs::create_dir_all(&dir);
     let regpath = format!("{}\\{}.port", dir, app.session_name);
     let _ = std::fs::write(&regpath, port.to_string());
@@ -791,11 +790,11 @@ fn handle_key(app: &mut AppState, key: KeyEvent) -> io::Result<bool> {
                     true
                 }
                 KeyCode::Char('%') => {
-                    split_active(app, LayoutKind::Vertical)?;
+                    split_active(app, LayoutKind::Horizontal)?;
                     true
                 }
                 KeyCode::Char('"') => {
-                    split_active(app, LayoutKind::Horizontal)?;
+                    split_active(app, LayoutKind::Vertical)?;
                     true
                 }
                 KeyCode::Char('x') => {
@@ -803,7 +802,7 @@ fn handle_key(app: &mut AppState, key: KeyEvent) -> io::Result<bool> {
                     true
                 }
                 KeyCode::Char('d') => {
-                    // detach: exit rmux cleanly
+                    // detach: exit pmux cleanly
                     return Ok(true);
                 }
                 KeyCode::Char('w') => { app.mode = Mode::WindowChooser { selected: app.active_idx }; true }
@@ -1142,8 +1141,8 @@ fn vt_to_color(c: vt100::Color) -> Color {
 }
 
 fn apply_cursor_style<W: Write>(out: &mut W) -> io::Result<()> {
-    let style = env::var("RMUX_CURSOR_STYLE").unwrap_or_else(|_| "bar".to_string());
-    let blink = env::var("RMUX_CURSOR_BLINK").unwrap_or_else(|_| "1".to_string()) != "0";
+    let style = env::var("PMUX_CURSOR_STYLE").unwrap_or_else(|_| "bar".to_string());
+    let blink = env::var("PMUX_CURSOR_BLINK").unwrap_or_else(|_| "1".to_string()) != "0";
     let code = match style.as_str() {
         "block" => if blink { 1 } else { 2 },
         "underline" => if blink { 3 } else { 4 },
@@ -1159,7 +1158,7 @@ fn render_window(f: &mut Frame, app: &mut AppState, area: Rect) {
     render_node(f, &mut win.root, &win.active_path, &mut Vec::new(), area);
 }
 
-fn enter_copy_mode(app: &mut AppState) { app.mode = Mode::CopyMode { offset: 0 }; }
+fn enter_copy_mode(app: &mut AppState) { app.mode = Mode::CopyMode; }
 
 fn cycle_top_layout(app: &mut AppState) {
     let win = &mut app.windows[app.active_idx];
@@ -1436,14 +1435,14 @@ fn expand_status(fmt: &str, app: &AppState, time_str: &str) -> String {
     let window = &app.windows[app.active_idx];
     s = s.replace("#I", &(app.active_idx + 1).to_string());
     s = s.replace("#W", &window.name);
-    s = s.replace("#S", "rmux");
+    s = s.replace("#S", "pmux");
     s = s.replace("%H:%M", time_str);
     s
 }
 
 fn load_config(app: &mut AppState) {
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let path = format!("{}\\.rmux.conf", home);
+    let path = format!("{}\\.pmux.conf", home);
     if let Ok(content) = std::fs::read_to_string(&path) {
         for line in content.lines() {
             let l = line.trim();
@@ -1455,8 +1454,8 @@ fn load_config(app: &mut AppState) {
                         "status-left" => app.status_left = value.trim().to_string(),
                         "status-right" => app.status_right = value.trim().to_string(),
                         "mouse" => app.mouse_enabled = matches!(value.trim(), "on" | "true"),
-                        "cursor-style" => env::set_var("RMUX_CURSOR_STYLE", value.trim()),
-                        "cursor-blink" => env::set_var("RMUX_CURSOR_BLINK", if matches!(value.trim(), "on"|"true") { "1" } else { "0" }),
+                        "cursor-style" => env::set_var("PMUX_CURSOR_STYLE", value.trim()),
+                        "cursor-blink" => env::set_var("PMUX_CURSOR_BLINK", if matches!(value.trim(), "on"|"true") { "1" } else { "0" }),
                         "prefix" => {
                             if value.trim().eq_ignore_ascii_case("C-b") { app.prefix_key = (KeyCode::Char('b'), KeyModifiers::CONTROL); }
                             if value.trim().eq_ignore_ascii_case("C-a") { app.prefix_key = (KeyCode::Char('a'), KeyModifiers::CONTROL); }
@@ -1694,7 +1693,7 @@ fn run_server(session_name: String) -> io::Result<()> {
         last_window_area: Rect { x: 0, y: 0, width: 0, height: 0 },
         mouse_enabled: true,
         paste_buffers: Vec::new(),
-        status_left: "rmux:#I".to_string(),
+        status_left: "pmux:#I".to_string(),
         status_right: "%H:%M".to_string(),
         copy_anchor: None,
         copy_pos: None,
@@ -1717,7 +1716,7 @@ fn run_server(session_name: String) -> io::Result<()> {
     let port = listener.local_addr()?.port();
     app.control_port = Some(port);
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).unwrap_or_default();
-    let dir = format!("{}\\.rmux", home);
+    let dir = format!("{}\\.pmux", home);
     let _ = std::fs::create_dir_all(&dir);
     let regpath = format!("{}\\{}.port", dir, app.session_name);
     let _ = std::fs::write(&regpath, port.to_string());
@@ -1959,7 +1958,7 @@ fn infer_title_from_prompt(screen: &vt100::Screen, rows: u16, cols: u16) -> Opti
 
 fn resolve_last_session_name() -> Option<String> {
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).ok()?;
-    let dir = format!("{}\\.rmux", home);
+    let dir = format!("{}\\.pmux", home);
     let last = std::fs::read_to_string(format!("{}\\last_session", dir)).ok();
     if let Some(name) = last {
         let name = name.trim().to_string();
@@ -1981,18 +1980,18 @@ fn resolve_last_session_name() -> Option<String> {
 }
 
 fn resolve_default_session_name() -> Option<String> {
-    if let Ok(name) = env::var("RMUX_DEFAULT_SESSION") {
+    if let Ok(name) = env::var("PMUX_DEFAULT_SESSION") {
         let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).ok()?;
-        let p = format!("{}\\.rmux\\{}.port", home, name);
+        let p = format!("{}\\.pmux\\{}.port", home, name);
         if std::path::Path::new(&p).exists() { return Some(name); }
     }
     let home = env::var("USERPROFILE").or_else(|_| env::var("HOME")).ok()?;
-    let candidates = [format!("{}\\.rmuxrc", home), format!("{}\\.rmux\\rmuxrc", home)];
+    let candidates = [format!("{}\\.pmuxrc", home), format!("{}\\.pmux\\pmuxrc", home)];
     for cfg in candidates.iter() {
         if let Ok(text) = std::fs::read_to_string(cfg) {
             let line = text.lines().find(|l| !l.trim().is_empty())?;
             let name = if let Some(rest) = line.strip_prefix("default-session ") { rest.trim().to_string() } else { line.trim().to_string() };
-            let p = format!("{}\\.rmux\\{}.port", home, name);
+            let p = format!("{}\\.pmux\\{}.port", home, name);
             if std::path::Path::new(&p).exists() { return Some(name); }
         }
     }

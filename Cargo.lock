@@ -489,6 +489,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
+name = "pmux"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "crossterm 0.28.1",
+ "portable-pty",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "unicode-width 0.1.14",
+ "vt100",
+ "which",
+]
+
+[[package]]
 name = "portable-pty"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -599,21 +614,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "rmux"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "crossterm 0.28.1",
- "portable-pty",
- "ratatui",
- "serde",
- "serde_json",
- "unicode-width 0.1.14",
- "vt100",
- "which",
 ]
 
 [[package]]

@@ -1,7 +1,13 @@
 [package]
-name = "rmux"
+name = "pmux"
 version = "0.1.0"
 edition = "2021"
+description = "A PowerShell-focused terminal multiplexer inspired by tmux, written in Rust"
+license = "MIT"
+repository = "https://github.com/computersrmyfriends/pmux"
+readme = "README.md"
+keywords = ["terminal", "multiplexer", "tmux", "tui", "cli", "powershell"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 ratatui = "0.26"

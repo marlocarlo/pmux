@@ -1,0 +1,21 @@
+{
+    "version": "0.1.0",
+    "description": "A PowerShell-focused terminal multiplexer inspired by tmux, written in Rust",
+    "homepage": "https://github.com/computersrmyfriends/pmux",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/computersrmyfriends/pmux/releases/download/v0.1.0/pmux-windows-x86_64.exe",
+            "hash": "TODO_SHA256_HASH"
+        }
+    },
+    "bin": "pmux-windows-x86_64.exe",
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/computersrmyfriends/pmux/releases/download/v$version/pmux-windows-x86_64.exe"
+            }
+        }
+    }
+}
