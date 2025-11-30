@@ -171,7 +171,7 @@ EXAMPLES:
     {prog} ls                       List all sessions
     {prog} split-window -h          Split current pane horizontally
 
-NOTE: pmux installs as both 'pmux' and 'tmux' commands - use whichever you prefer!
+NOTE: pmux includes a 'tmux' alias - use 'pmux' or 'tmux' command, your choice!
 
 For more information: https://github.com/marlocarlo/pmux
 "#, prog = prog);

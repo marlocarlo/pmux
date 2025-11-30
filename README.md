@@ -4,7 +4,7 @@
 
 pmux brings tmux-style terminal multiplexing to Windows natively. No WSL, no Cygwin, no compromises. Built in Rust for Windows Terminal, PowerShell, and cmd.exe.
 
-> 💡 **Bonus:** pmux also installs as `tmux`, so you can use your muscle memory!
+> 💡 **Tip:** pmux includes a `tmux` alias, so you can use your muscle memory!
 
 ## Why pmux?
 
@@ -14,7 +14,7 @@ If you've used tmux on Linux/macOS and wished you had something similar on Windo
 - **Works everywhere** — Windows Terminal, PowerShell, cmd.exe, ConEmu, etc.
 - **No dependencies** — Single binary, just works
 - **tmux-compatible** — Same commands, same keybindings, zero learning curve
-- **Use as `tmux`** — Installs both `pmux` and `tmux` commands
+- **`tmux` alias included** — Use `pmux` or `tmux` command, your choice
 
 ## Features
 
@@ -38,7 +38,7 @@ If you've used tmux on Linux/macOS and wished you had something similar on Windo
 cargo install pmux
 ```
 
-This installs both `pmux` and `tmux` commands.
+After installation, both `pmux` and `tmux` commands are available.
 
 ### Using Scoop
 
@@ -143,3 +143,33 @@ set -g cursor-blink on
 ## License
 
 MIT
+
+---
+
+## About pmux
+
+**pmux** (PowerShell Multiplexer) is a terminal multiplexer built specifically for Windows. It is an alternative to tmux for Windows users who want terminal multiplexing without WSL or Cygwin.
+
+### Keywords
+
+terminal multiplexer, tmux for windows, tmux alternative, tmux windows, windows terminal multiplexer, powershell multiplexer, split terminal windows, multiple terminals, terminal tabs, pane splitting, session management, windows terminal, powershell terminal, cmd terminal, rust terminal, console multiplexer, terminal emulator, windows console, cli tool, command line, devtools, developer tools, productivity, windows 10, windows 11
+
+### Related Projects
+
+- [tmux](https://github.com/tmux/tmux) — The original terminal multiplexer for Unix/Linux/macOS
+- [Windows Terminal](https://github.com/microsoft/terminal) — Microsoft's modern terminal for Windows
+- [PowerShell](https://github.com/PowerShell/PowerShell) — Cross-platform PowerShell
+
+### FAQ
+
+**Q: Is pmux cross-platform?**  
+A: No. pmux is built exclusively for Windows. For Linux/macOS, use tmux.
+
+**Q: Does pmux work with Windows Terminal?**  
+A: Yes! pmux works great with Windows Terminal, PowerShell, cmd.exe, ConEmu, and other Windows terminal emulators.
+
+**Q: Why use pmux instead of Windows Terminal tabs?**  
+A: pmux offers session persistence (detach/reattach), synchronized input to multiple panes, and tmux-compatible keybindings.
+
+**Q: Can I use tmux commands with pmux?**  
+A: Yes! pmux includes a `tmux` alias. Commands like `tmux new-session`, `tmux attach`, `tmux ls` all work.
